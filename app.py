@@ -1,16 +1,27 @@
 from flask import Flask, request, jsonify
 from apify_client import ApifyClient
 import os
+import logging
 
 app = Flask(__name__)
 
 API_TOKEN = os.getenv("API_TOKEN")
 API_KEY = os.getenv("MY_API_KEY")  # This will be your custom API Key
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+
 @app.route('/run', methods=['POST'])
 def run_actor():
+    # Log the incoming headers, excluding the API key for security
+    headers = dict(request.headers)
+    headers.pop('X-API-Key', None)  # Remove API key from logs
+    app.logger.debug(f"Received headers: {headers}")
+
     # Check for the API Key in the request headers
-    if request.headers.get('X-API-Key') != API_KEY:
+    received_api_key = request.headers.get('X-API-Key')
+    if received_api_key != API_KEY:
+        app.logger.warning("Unauthorized access attempt.")
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
@@ -35,6 +46,7 @@ def run_actor():
         return jsonify({"status": "success", "data": results})
 
     except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
