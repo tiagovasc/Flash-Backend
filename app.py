@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
 from apify_client import ApifyClient
 import os
 import logging
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Configure detailed logging
 logging.basicConfig(level=logging.DEBUG)
@@ -20,7 +22,9 @@ def run_actor():
     received_api_key = request.headers.get('Authorization')
     app.logger.debug("Received API Key: %s", received_api_key)
 
-    if received_api_key != API_KEY:
+    # Ensure the received API key matches the expected format
+    expected_api_key = f'Bearer {API_KEY}'
+    if received_api_key != expected_api_key:
         app.logger.warning("Unauthorized access attempt with key: %s", received_api_key)
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -34,7 +38,7 @@ def run_actor():
             return jsonify({"error": "Missing 'url' in request"}), 400
 
         client = ApifyClient(API_TOKEN)
-        app.logger.debug("Apify Client initialized with token: %s", API_TOKEN)
+        app.logger.debug("Apify Client initialized")
 
         run_input = {
             "urls": [url],
