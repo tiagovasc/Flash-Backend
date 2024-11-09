@@ -4,7 +4,7 @@ from apify_client import ApifyClient
 app = Flask(__name__)
 
 # Replace with your Apify API token
-API_TOKEN = "YOUR_API_TOKEN"
+API_TOKEN = os.getenv("API_TOKEN")
 
 @app.route('/run', methods=['POST'])
 def run_actor():
