@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 from apify_client import ApifyClient
 import os
 import logging
@@ -7,7 +7,6 @@ import logging
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
-# Configure detailed logging
 logging.basicConfig(level=logging.DEBUG)
 
 API_TOKEN = os.getenv("API_TOKEN")
@@ -15,30 +14,26 @@ API_KEY = os.getenv("MY_API_KEY")
 
 @app.route('/run', methods=['POST'])
 def run_actor():
-    # Log all headers for debugging
     app.logger.debug("Received headers: %s", request.headers)
 
-    # Check and log the specific header we expect
     received_api_key = request.headers.get('Authorization')
-    app.logger.debug("Received API Key: %s", received_api_key)
-
-    # Ensure the received API key matches the expected format
-    expected_api_key = f'Bearer {API_KEY}'
-    if received_api_key != expected_api_key:
+    if received_api_key != f'Bearer {API_KEY}':
         app.logger.warning("Unauthorized access attempt with key: %s", received_api_key)
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
         data = request.get_json()
         app.logger.debug("Received data: %s", data)
-
+        
         url = data.get("url")
+        clean_output = request.args.get('clean_output', 'False').lower() == 'true'
+
         if not url:
             app.logger.error("Missing 'url' in request")
             return jsonify({"error": "Missing 'url' in request"}), 400
 
         client = ApifyClient(API_TOKEN)
-        app.logger.debug("Apify Client initialized")
+        app.logger.debug("Apify Client initialized with token: %s", API_TOKEN)
 
         run_input = {
             "urls": [url],
@@ -50,9 +45,16 @@ def run_actor():
         run = client.actor("karamelo/test-youtube-structured-transcript-extractor").call(run_input=run_input)
         results = []
         for item in client.dataset(run["defaultDatasetId"]).iterate_items():
-            results.append(item)
-        
+            results.append(item['captions'])
+
         app.logger.debug("Actor results: %s", results)
+
+        # Check if clean_output is set to True and format accordingly
+        if clean_output:
+            # Flatten the list of lists and join into a single string
+            flat_list = ' '.join([caption for sublist in results for caption in sublist])
+            return flat_list
+
         return jsonify({"status": "success", "data": results})
 
     except Exception as e:
