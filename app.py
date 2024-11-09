@@ -15,11 +15,11 @@ logging.basicConfig(level=logging.DEBUG)
 def run_actor():
     # Log the incoming headers, excluding the API key for security
     headers = dict(request.headers)
-    headers.pop('X-API-Key', None)  # Remove API key from logs
+    headers.pop('Authorization', None)  # Remove API key from logs
     app.logger.debug(f"Received headers: {headers}")
 
-    # Check for the API Key in the request headers
-    received_api_key = request.headers.get('X-API-Key')
+    # Check for the API Key in the 'Authorization' header
+    received_api_key = request.headers.get('Authorization')
     if received_api_key != API_KEY:
         app.logger.warning("Unauthorized access attempt.")
         return jsonify({"error": "Unauthorized"}), 401
