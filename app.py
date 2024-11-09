@@ -1,13 +1,18 @@
 from flask import Flask, request, jsonify
 from apify_client import ApifyClient
-import os  # Add this line to import the os module
+import os
 
 app = Flask(__name__)
 
 API_TOKEN = os.getenv("API_TOKEN")
+API_KEY = os.getenv("MY_API_KEY")  # This will be your custom API Key
 
 @app.route('/run', methods=['POST'])
 def run_actor():
+    # Check for the API Key in the request headers
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+
     try:
         data = request.get_json()
         url = data.get("url")
