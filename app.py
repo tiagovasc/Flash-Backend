@@ -25,18 +25,18 @@ def run_actor():
         data = request.get_json()
         app.logger.debug("Received data: %s", data)
         
-        url = data.get("url")
+        urls = data.get("urls")
         clean_output = request.args.get('clean_output', 'False').lower() == 'true'
 
-        if not url:
-            app.logger.error("Missing 'url' in request")
-            return jsonify({"error": "Missing 'url' in request"}), 400
+        if not urls or not isinstance(urls, list):
+            app.logger.error("Missing 'urls' in request or 'urls' is not a list")
+            return jsonify({"error": "Missing 'urls' in request or 'urls' is not a list"}), 400
 
         client = ApifyClient(API_TOKEN)
         app.logger.debug("Apify Client initialized with token: %s", API_TOKEN)
 
         run_input = {
-            "urls": [url],
+            "urls": urls,
             "maxRetries": 3,
             "proxyOptions": {"useApifyProxy": True},
         }
